@@ -396,8 +396,9 @@ class RecurrenceElement(RingElement):
     def is_abelian(self):
         return self.galois_group().is_abelian()
     
-    def disp(self,tex=False):
+    def disp(self,mathjax=True,tex=False):
         """ Displays a description of self using MathJax
+        If mathjax is False, won't use MathJax
         If tex is True, returns a string which is tex code"""
         self.reduce()
         k = self.n()
@@ -409,15 +410,25 @@ class RecurrenceElement(RingElement):
         S =  "a_{n} = " + latex(E)
         for n in range(1,k):
             S = S.replace(latex(V[n]),"a_{n-%i}"%n)
-        S = "\\text{Recurrent sequence:}\\\\" + S + "\\\\"
+        if mathjax:
+            S = "\\text{Recurrent sequence:}\\\\" + S + "\\\\"
+        else:
+            print "Recurrent sequence:"
+            S = S.replace("\\frac{","").replace('}{','/').replace("\\,","").replace("  "," ").replace("} a"," a")
+            print S
+            S = ""
         for n in range(self.n()-1):
-            S = S + "a_{%i}="%n + str(self.init_vals[n]) + ",\,\,"
-        S = S[:-5]
+            S = S + "a_{%i}="%n + str(self.init_vals[n]) + "," + ("\,\," if mathjax else " ")
+        if mathjax:
+            S = S[:-5]
         if tex:
             return S
-        else:
+        elif mathjax:
             display(Math(S))
-            return None
+        else:
+            print S
+        return None
+            
     
     def decide(self):
         """ Returns True if there is a prime p for which a_p = 0 mod p,
