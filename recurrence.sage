@@ -399,7 +399,7 @@ class RecurrenceElement(RingElement):
     def disp(self,mathjax=True,tex=False):
         """ Displays a description of self using MathJax
         If mathjax is False, won't use MathJax
-        If tex is True, returns a string which is tex code"""
+        If tex is True, returns a string which is tex code (tex is ignored if mathjax is False)"""
         self.reduce()
         k = self.n()
         assert self.char_poly[-1] == 1
@@ -412,13 +412,17 @@ class RecurrenceElement(RingElement):
             S = S.replace(latex(V[n]),"a_{n-%i}"%n)
         if mathjax:
             S = "\\text{Recurrent sequence:}\\\\" + S + "\\\\"
+            for n in range(self.n()-1):
+                S = S + "a_{%i}="%n + latex(self.init_vals[n]) + ",\,\,"
         else:
             print "Recurrent sequence:"
             S = S.replace("\\frac{","").replace('}{','/').replace("\\,","").replace("  "," ").replace("} a"," a")
+            for n in range(10):
+                S = S.replace(str(n)+' a',str(n)+'*a')
             print S
             S = ""
-        for n in range(self.n()-1):
-            S = S + "a_{%i}="%n + str(self.init_vals[n]) + "," + ("\,\," if mathjax else " ")
+            for n in range(self.n()-1):
+                S = S + "a_%i = "%n + str(self.init_vals[n]) + ", "
         S = S[:(-5 if mathjax else -2)]
         if tex:
             return S
