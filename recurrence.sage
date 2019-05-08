@@ -35,7 +35,8 @@ def prod_roots(L1,L2):
     of the polynomial with coefficients L2"""
     A = parent(L1[0])
     R.<x> = PolynomialRing(A)
-    S.<y> = PolynomialRing(PolynomialRing(A,z))
+    SS.<z> = PolynomialRing(A)
+    S.<y> = PolynomialRing(SS)
     f,g = sum(a*x^i for i,a in enumerate(L1)),sum(a*x^i for i,a in enumerate(L2))
     ff = f.subs({x:y})
     gg = g.subs({x:S(y)*S(z)}).reverse()
