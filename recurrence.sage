@@ -1,16 +1,13 @@
 from IPython.display import display, Math, Latex
 from types import FunctionType
 
-X = QQ['X'].0
-var('a')
-
 def L_to_poly(L):
-    """Returns a polynomial whose coefficients are given by the list L"""
+    """ Returns a polynomial whose coefficients are given by the list L"""
     x = QQ['x'].0
     return sum(L[n]*x**n for n in range(len(L)))
 
 def poly_to_L(f):
-    """Returns a list of coefficients of f"""
+    """ Returns a list of coefficients of f"""
     try:
         return f.coefficients(sparse=False)
     except AttributeError:
@@ -18,7 +15,7 @@ def poly_to_L(f):
         return [f]
 
 def prod_roots(L1,L2):
-    """Returns a list of coefficients of the polynomial whose roots are precisely
+    """ Returns a list of coefficients of the polynomial whose roots are precisely
     the products of a root of the polynomial with coefficients L1 and a root
     of the polynomial with coefficients L2"""
     R.<x> = PolynomialRing(QQ)
@@ -41,7 +38,7 @@ def subs(L):
                 yield [n] + LL
 
 def convolve(L1,L2):
-    """Returns the convolution of L1 and L2"""
+    """ Returns the convolution of L1 and L2"""
     a1,a2 = len(L1),len(L2)
     if a1 == 0 or a2 == 0:
         return []
@@ -104,21 +101,21 @@ class Recurrence(Ring):
         return False
     
     def fib(self):
-        # Fibonacci sequence
+        """ Returns the Fibonacci sequence"""
         return RecurrenceElement(self,([-1,-1,1],[0,1]))
     
     def lucas(self):
-        # The Lucas sequence
+        """ Returns the Lucas sequence"""
         return RecurrenceElement(self,([-1,-1,1],[2,1]))
 
     def trib(self,n=3):
-        # Generalized tribonacci sequence
+        """ Returns the generalized tribonacci sequence"""
         init_vals = [0 for _ in range(n-1)] + [1]
         char_poly = [-1 for _ in range(n)] + [1]
         return RecurrenceElement(self,(char_poly,init_vals))
 
     def charac(self,a,n):
-        # Characteristic sequence of a mod n
+        """ Returns the characteristic sequence of a mod n"""
         init_vals = [1 if i==a else 0 for i in range(n)]
         char_poly = [-1] + [0 for _ in range(n-1)] + [1]
         return RecurrenceElement(self,(char_poly,init_vals))
@@ -219,7 +216,7 @@ class RecurrenceElement(RingElement):
         return T
             
     def get_range(self,a,b):
-        # Returns a list of values from the sequence
+        """ Returns a list of values from the sequence"""
         assert a <= b
         L = list(self.init_vals)
         P = self.char_poly
@@ -232,11 +229,13 @@ class RecurrenceElement(RingElement):
         L = L[:b-a]
         return L
     
-    def POLY(self):
-        return sum(self.char_poly[n]*X**n for n in range(len(self.char_poly)))
+    def characteristic_polynomial(self):
+        """ Returns the characteristic polynomial of self, as a polynomial in x"""
+        R.<x> = PolynomialRing(self.base)
+        return sum(self.char_poly[n]*x**n for n in range(len(self.char_poly)))
     
     def reduce(self):
-        # Minimizes characteristic polynomial
+        """ Checks if a proper divisor of the characteristic polynomial works"""
         if self.base() is not QQ:
             # Don't even try to reduce unless base ring is Q
             return None
@@ -253,7 +252,7 @@ class RecurrenceElement(RingElement):
                 self.char_poly = P.coefficients(sparse=False)
                 self.init_vals = self.init_vals[:len(self.char_poly)-1]
                 return None
-        raise Exception('reduce(self) ran off the end')
+        raise Exception('reduce(self) ran off the end') # Should not happen
     
     def splitting_field(self):
         var('a')
@@ -264,7 +263,7 @@ class RecurrenceElement(RingElement):
         return self.galois_group()
     
     def companion(self):
-        # companion matrix
+        """ Returns the companion matrix of the characteristic polynomial of self"""
         self.reduce()
         return matrix(self.splitting_field(),companion_matrix(self.POLY())).transpose()
     
@@ -274,7 +273,7 @@ class RecurrenceElement(RingElement):
         return (D,P,P.inverse())
     
     def L_L(self):
-        # Returns a list of pairs, representing an element of L\otimes L
+        """ Returns a list of pairs, representing an element of L\otimes L"""
         D,P,Pi = self.j_form()
         D = matrix(D)
         n = len(D.rows())
@@ -291,7 +290,7 @@ class RecurrenceElement(RingElement):
     
     
     def bad_primes(self):
-        """Returns a list of potentially bad primes.
+        """ Returns a list of potentially bad primes.
         For every p not on this list, it is
         guaranteed that L is unramified at p, and
         that a_p \equiv 0 \mod p if and only if
@@ -314,7 +313,7 @@ class RecurrenceElement(RingElement):
         return T
     
     def galois_group(self):
-        """Returns the Galois group of the splitting field of the characteristic polynomial of self"""
+        """ Returns the Galois group of the splitting field of the characteristic polynomial of self"""
         K = self.splitting_field()
         return K.galois_group()
     
@@ -325,14 +324,14 @@ class RecurrenceElement(RingElement):
         return {g:sum(s[0]*g(s[1]) for s in L) for g in G}
     
     def CC(self):
-        """Returns a list [(conjugacy class in Galois group, minimal polynomial of value on that class)]"""
+        """ Returns a list [(conjugacy class in Galois group, minimal polynomial of value on that class)]"""
         G = self.gal()
         A = self.A()
         D = [(c.an_element(),minimal_polynomial(A[c.an_element()])) for c in G.conjugacy_classes()]
         return D
     
     def density(self):
-        """Returns the natural density of the set {p: a_p = 0 mod p}"""
+        """ Returns the natural density of the set {p: a_p = 0 mod p}"""
         A = self.A()
         n = 0
         d = 0
@@ -343,7 +342,7 @@ class RecurrenceElement(RingElement):
         return n/d
     
     def n(self):
-        """Returns the order of the recurrence relation satisfied by self"""
+        """ Returns the order of the recurrence relation satisfied by self"""
         self.reduce()
         return len(self.char_poly)
     
@@ -375,7 +374,7 @@ class RecurrenceElement(RingElement):
                 return reduce_congruence(T)
             
     def min_poly_p(self,display=True):
-        """Computes the minimal polynomial of a_p \mod p,
+        """ Computes the minimal polynomial of a_p \mod p,
         # and the density for each irreducible factor"""
         A = self.A()
         n = len(A)
@@ -395,15 +394,15 @@ class RecurrenceElement(RingElement):
         return D
     
     def disc(self):
-        """Returns the discriminant"""
+        """ Returns the discriminant"""
         return self.splitting_field().disc()
     
     def is_abelian(self):
         return self.galois_group().is_abelian()
     
     def disp(self,tex=False):
-        """disp(self) Renders a description of self in tex
-        disp(self,tex=True) returns a string which is tex code"""
+        """ Displays a description of self using MathJax
+        If tex is True, returns a string which is tex code"""
         self.reduce()
         k = self.n()
         assert self.char_poly[-1] == 1
@@ -424,9 +423,6 @@ class RecurrenceElement(RingElement):
             display(Math(S))
             return None
     
-    def e(self,n):
-        return self.get_range(n,n+1)[0]
-    
     def decide(self):
         """ Returns True if there is a prime p for which a_p = 0 mod p,
         False otherwise"""
@@ -440,8 +436,16 @@ class RecurrenceElement(RingElement):
                 return True
         return False
 
+def is_normal(x):
+    """ Returns True if x is a normal element (its Galois orbit is a basis for underlying number field),
+    returns False otherwise"""
+    L = parent(x)
+    V,_,f = L.vector_space()
+    G = L.galois_group()
+    return not V.are_linearly_dependent([f(g(x)) for g in G])
+
 def recurrence_from_class(L,phi,x=None):
-    """Returns a recurrent sequence (a_n)
+    """ Returns a recurrent sequence (a_n)
     such that phi(frob_p) = a_p mod p, where phi is a function Gal(L/Q) --> L
     satisfying phi(ghg^{-1}) = g(phi(h))"""
     b = L.gens()[0]
@@ -450,12 +454,13 @@ def recurrence_from_class(L,phi,x=None):
     n = len(LL)
     if x is None:
         # Find normal element
-        coord_b = b.coordinates_in_terms_of_powers()
         while True:
             x = L.random_element()
-            B = transpose(matrix([coord_b(g(x)) for g in G]))
-            if B.det() != 0: 
+            if is_normal(x):
                 break
+    else:
+        if not is_normal(x):
+            raise ValueError("Third argument needs to be a normal element")
     
     if isinstance(phi,FunctionType):
         # Turn phi into a list
@@ -465,7 +470,8 @@ def recurrence_from_class(L,phi,x=None):
     try:
         v = M.inverse()*vector(phi)
     except ZeroDivisionError:
-        raise Exception("Third argument needs to be a normal element")
+        # Should not happen
+        raise ValueError("Cannot tell if third argument is normal")
     
     assert [sum(v[j]*g(LL[j](x)) for j in range(n)) for g in LL] == phi
     
