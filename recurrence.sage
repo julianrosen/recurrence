@@ -68,15 +68,13 @@ def reduce_congruence(T):
         if D%n != 0:
             continue
         TT = [None for _ in range(n)]
-        B = True
         for i in range(D):
             if T[i] is not None:
                 if TT[i%n] is None:
                     TT[i%n] = T[i]
                 elif TT[i%n] != T[i]:
-                    B = False
                     break
-        if B:
+        else:
             return TT
     raise Exception("reduce_congruence ran off the end")
 
@@ -231,7 +229,7 @@ class RecurrenceElement(RingElement):
     
     def characteristic_polynomial(self):
         """ Returns the characteristic polynomial of self, as a polynomial in x"""
-        R.<x> = PolynomialRing(self.base)
+        R.<x> = PolynomialRing(self.base())
         return sum(self.char_poly[n]*x**n for n in range(len(self.char_poly)))
     
     def reduce(self):
@@ -241,13 +239,13 @@ class RecurrenceElement(RingElement):
             return None
         assert len(self.init_vals) >= len(self.char_poly)-1
         self.init_vals = self.init_vals[:len(self.char_poly)-1]
-        F = self.POLY().factor()
+        F = self.characteristic_polynomial().factor()
         L = [x[1] for x in list(F)]
         PL = [x[0] for x in list(F)]
         for LL in subs(L):
             P = prod(PL[n]**LL[n] for n in range(len(LL)))
-            P = P + X
-            P = P - X
+            R.<x> = PolynomialRing(QQ)
+            P = R(P)
             if rec_test(P.coefficients(sparse=False),self.init_vals):
                 self.char_poly = P.coefficients(sparse=False)
                 self.init_vals = self.init_vals[:len(self.char_poly)-1]
@@ -256,7 +254,7 @@ class RecurrenceElement(RingElement):
     
     def splitting_field(self):
         var('a')
-        K = (self.POLY().splitting_field(a))
+        K = (self.characteristic_polynomial().splitting_field(a))
         return K
     
     def gal(self):
@@ -265,7 +263,7 @@ class RecurrenceElement(RingElement):
     def companion(self):
         """ Returns the companion matrix of the characteristic polynomial of self"""
         self.reduce()
-        return matrix(self.splitting_field(),companion_matrix(self.POLY())).transpose()
+        return matrix(self.splitting_field(),companion_matrix(self.characteristic_polynomial())).transpose()
     
     def j_form(self):
         M = self.companion()
@@ -365,12 +363,10 @@ class RecurrenceElement(RingElement):
                         T[p%D] = A[g]
                     elif A[g] != T[p%D]:
                         assert False
-            B = True
             for n in range(D):
                 if gcd(n,D) == 1 and T[n] is None:
-                    B = False
                     break
-            if B:
+            else:
                 return reduce_congruence(T)
             
     def min_poly_p(self,display=True):
@@ -427,12 +423,10 @@ class RecurrenceElement(RingElement):
         """ Returns True if there is a prime p for which a_p = 0 mod p,
         False otherwise"""
         if self.density() == 0:
-            B = True
             for p in self.bad_primes():
                 if numerator(self.e(p))%p == 0:
-                    B = False
                     break
-            if B:
+            else:
                 return True
         return False
 
