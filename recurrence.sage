@@ -14,8 +14,9 @@ def poly_to_L(f):
         # f is a constant polynomial, which is just a number and has no coefficients() method
         return [f]
 
-def prod_roots(L1,L2):
-    """ Returns a list of coefficients of the polynomial whose roots are precisely
+def prod_roots_old(L1,L2):
+    """ No longer in use 
+    Returns a list of coefficients of the polynomial whose roots are precisely
     the products of a root of the polynomial with coefficients L1 and a root
     of the polynomial with coefficients L2"""
     R.<x> = PolynomialRing(QQ)
@@ -27,6 +28,21 @@ def prod_roots(L1,L2):
              for t in g.roots(K))
     poly_to_L(h)
     return [QQ(x) for x in poly_to_L(h)]
+
+def prod_roots(L1,L2):
+    """ Returns a list of coefficients of the polynomial whose roots are precisely
+    the products of a root of the polynomial with coefficients L1 and a root
+    of the polynomial with coefficients L2"""
+    A = parent(L1[0])
+    R.<x> = PolynomialRing(A)
+    S.<y> = PolynomialRing(PolynomialRing(A,z))
+    f,g = sum(a*x^i for i,a in enumerate(L1)),sum(a*x^i for i,a in enumerate(L2))
+    ff = f.subs({x:y})
+    gg = g.subs({x:S(y)*S(z)}).reverse()
+    h = ff.resultant(gg)
+    hh = h.subs({z:x})
+    hh = hh/hh.coefficients()[-1]
+    return hh.coefficients(sparse=False)
 
 def subs(L):
     """ Generator for lists of non-negative integers whose entries are bounded by L"""
@@ -405,7 +421,9 @@ class RecurrenceElement(RingElement):
         assert self.char_poly[-1] == 1
         V = []
         for n in range(k):
-            V.append(var('x%i'%n))
+            V.append('x%i'%n)
+        R = PolynomialRing(self.base(),V)
+        V = R.gens()
         E = sum(-V[-n-1]*self.char_poly[n] for n in range(k-1))
         S =  "a_{n} = " + latex(E)
         for n in range(1,k):
