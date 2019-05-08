@@ -419,8 +419,7 @@ class RecurrenceElement(RingElement):
             S = ""
         for n in range(self.n()-1):
             S = S + "a_{%i}="%n + str(self.init_vals[n]) + "," + ("\,\," if mathjax else " ")
-        if mathjax:
-            S = S[:-5]
+        S = S[:(-5 if mathjax else -2)]
         if tex:
             return S
         elif mathjax:
