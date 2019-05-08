@@ -431,7 +431,10 @@ class RecurrenceElement(RingElement):
         else:
             print S
         return None
-            
+    
+    def show(self):
+        """ Displays self without MathJax"""
+        self.disp(mathjax=False)
     
     def decide(self):
         """ Returns True if there is a prime p for which a_p = 0 mod p,
