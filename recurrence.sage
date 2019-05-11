@@ -103,8 +103,8 @@ class Recurrence(Ring):
     def _repr_(self):
         return "The ring of linear recurrent sequences over "+str(self.base())
     
-    def _element_constructor_(self,s):
-        return RecurrenceElement(self,s)
+    def _element_constructor_(self,s1,s2=None):
+        return RecurrenceElement(self,s1,s2)
     
     def _coerce_map_from_(self,S):
         # Can coerce from rings that coerce into base, or rings of recurrent sequences
@@ -137,8 +137,11 @@ class Recurrence(Ring):
 
 
 class RecurrenceElement(RingElement):
-    def __init__(self,parent,data=0):
+    def __init__(self,parent,data=0,data2=None):
         RingElement.__init__(self,parent)
+        
+        if data2 is not None:
+            data = (data,data2)
         if isinstance(data,RecurrenceElement):
             try:
                 self.char_poly = [parent.base()(x) for x in data.char_poly]
@@ -248,9 +251,31 @@ class RecurrenceElement(RingElement):
         """ Returns the characteristic polynomial of self, as a polynomial in x"""
         R.<x> = PolynomialRing(self.base())
         return sum(self.char_poly[n]*x**n for n in range(len(self.char_poly)))
-    
+        
+        
     def reduce(self):
-        """ Checks if a proper divisor of the characteristic polynomial works"""
+        """ Ensures characteristic polynomial is minimal"""
+        base = self.base
+        n = len(self.char_poly)
+        T = []
+        for i in range(n):
+            T.append(self[i:i+n-1])
+            M = matrix(T)
+            if M.rank() == i:
+                break
+        else:
+            raise Exception("This should not happen")
+        V = M.left_kernel()
+        B = V.basis()
+        assert len(B) == 1
+        L = [x/B[0][-1] for x in B[0]]
+        self.char_poly = L
+        self.init_vals = self.init_vals[:i]
+        return None
+    
+    def old_reduce(self):
+        """ Ensures characteristic polynomial is minimal
+        This method is no longer used"""
         if self.base() is not QQ:
             # Don't even try to reduce unless base ring is Q
             return None
@@ -442,7 +467,8 @@ class RecurrenceElement(RingElement):
             S = ""
             for n in range(self.n()-1):
                 S = S + "a_%i = "%n + str(self.init_vals[n]) + ", "
-        S = S[:(-5 if mathjax else -2)]
+        if k >= 2:
+            S = S[:(-5 if mathjax else -2)]
         if tex:
             return S
         elif mathjax:
