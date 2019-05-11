@@ -134,6 +134,10 @@ class Recurrence(Ring):
         init_vals = [1 if i==a else 0 for i in range(n)]
         char_poly = [-1] + [0 for _ in range(n-1)] + [1]
         return RecurrenceElement(self,(char_poly,init_vals))
+        
+    def exp(self,a):
+        """ Returns the sequence a^n"""
+        return RecurrenceElement(self,[-a,1],[1])
 
 
 class RecurrenceElement(RingElement):
@@ -153,10 +157,12 @@ class RecurrenceElement(RingElement):
             self.init_vals = [parent.base()(x) for x in data[1]]
         else:
             try:
-                self.char_poly = [parent.base().one(),-parent.base().one()]
+                self.char_poly = [-parent.base().one(),parent.base().one()]
                 self.init_vals = [parent.base()(data)]
             except:
                 raise ValueError("Could not build recurrent sequence")
+        if not rec_test(self.char_poly,self.init_vals) or len(self.init_vals) < len(self.char_poly)-1:
+            raise ValueError("Data does not determine a unique recurrent sequence")
         self.reduce()
         
     def base(self):
@@ -172,8 +178,8 @@ class RecurrenceElement(RingElement):
         P2 = other.char_poly
         R.char_poly = convolve(P1,P2)
         M = len(P1)+len(P2)-2
-        L1 = self.get_range(0,M)
-        L2 = other.get_range(0,M)
+        L1 = self.get_range(M)
+        L2 = other.get_range(M)
         R.init_vals = [L1[n]+L2[n] for n in range(M)]
         R.reduce()
         return R
@@ -183,8 +189,8 @@ class RecurrenceElement(RingElement):
         R = parent(self)(0)
         R.char_poly = prod_roots(self.char_poly,other.char_poly)
         m,n = len(self.init_vals),len(other.init_vals)
-        L1 = self.get_range(0,m*n)
-        L2 = other.get_range(0,m*n)
+        L1 = self.get_range(m*n)
+        L2 = other.get_range(m*n)
         R.init_vals = [L1[i]*L2[i] for i in range(m*n)]
         R.reduce()
         return R
@@ -221,21 +227,21 @@ class RecurrenceElement(RingElement):
     def __getitem__(self,n):
         if not isinstance(n,slice):
             return self.get_range(n,n+1)[0]
-        return self.get_range(n.start,n.stop)
+        a,b = n.start,n.stop
+        if a is None:
+            a = 0
+        return self.get_range(a,b)
       
-    def shift(self,n,in_place=False):
-        if in_place:
-            self.init_vals = self.get_range(n,n+len(self.init_vals))
-            T = self
-        else:
-            r = parent(self)(0)
-            r.init_vals = self.get_range(n,n+len(self.init_vals))
-            r.char_poly = list(self.char_poly)
-            T = r
-        return T
+    def shift(self,n):
+        L = self.get_range(n,n+len(self.init_vals))
+        new_base = parent(self.base()(0) + sum(L))
+        R = parent(self) if new_base is self.base() else Recurrence(new_base)
+        return R(list(self.char_poly),L)
             
-    def get_range(self,a,b):
+    def get_range(self,a,b=None):
         """ Returns a list of values from the sequence"""
+        if b is None:
+            a,b = 0,a
         assert a <= b
         L = list(self.init_vals)
         P = self.char_poly
@@ -309,12 +315,17 @@ class RecurrenceElement(RingElement):
         return matrix(self.splitting_field(),companion_matrix(self.characteristic_polynomial())).transpose()
     
     def j_form(self):
+        """ Returns the Jordan canonical form of the companion matrix of self"""
         M = self.companion()
         D,P = tuple(M.jordan_form(transformation=True))
         return (D,P,P.inverse())
     
     def L_L(self):
-        """ Returns a list of pairs, representing an element of L\otimes L"""
+        """ L is a splitting field of the characteristic polynomial of self
+        There is a unique Galois-invariant element sum a_i\otimes b_i of L\otimes L
+        such that self(p) is congruent to sum a_i*frob_p(b_i) mod p for all p.
+        L_L(self) returns [(a_i,b_i)]"""
+        assert self.base() is QQ or self.base() is ZZ
         D,P,Pi = self.j_form()
         D = matrix(D)
         n = len(D.rows())
@@ -522,17 +533,19 @@ def recurrence_from_class(L,phi,x=None):
     if isinstance(phi,FunctionType):
         # Turn phi into a list
         phi = [phi(g) for g in LL]
-    
-    M = matrix([[LL[i](LL[j](x)) for i in range(n)] for j in range(n)])
+    elif isinstance(phi,dict):
+        phi = [phi[g] for g in LL]
+    M = matrix([[h(g(x)) for g in LL] for h in LL])
     try:
         v = M.inverse()*vector(phi)
     except ZeroDivisionError:
         # Should not happen
         raise ValueError("Cannot tell if third argument is normal")
-    
-    assert [sum(v[j]*g(LL[j](x)) for j in range(n)) for g in LL] == phi
-    
+    assert M*v == vector(phi)
+    if [sum(v[j]*g(h(x)) for j,h in enumerate(LL)) for g in LL] != phi:
+        print [sum(v[j]*g(h(x)) for j,h in enumerate(LL)) for g in LL]
+        print phi
     char_poly = x.minpoly().coefficients(sparse=False)
-    init_vals = [sum(v[j]*(LL[j](x))^i for j in range(n)) for i in range(n)]
+    init_vals = [sum(v[j]*(LL[j](x))**i for j in range(n)) for i in range(n)]
     R = Recurrence(QQ)
     return R((char_poly,init_vals))
