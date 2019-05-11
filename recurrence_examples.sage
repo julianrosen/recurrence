@@ -10,7 +10,7 @@ R = Recurrence(QQ) # Ring of recurrent sequences over Q
 ####
 F = R.fib()   # Fibonacci sequence
 F.show()      # Displays F
-F.disp()      # Displays F using MathJax (in Jupyter)
+F.disp()      # Displays F using Latex
 print F[3:12] # Some elements of F
 alt = R.exp(-1)  # Alternating sequence (-1)^n
 assert F.shift(1)*F.shift(-1) - F^2 == alt  # Verify the identity F_{n+1}*F_{n-1} - F_n^2 == (-1)^n
