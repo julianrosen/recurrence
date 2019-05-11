@@ -157,7 +157,9 @@ class RecurrenceElement(RingElement):
         """ Description of self"""
         S = latex(self)
         S = S.replace("\\frac{","").replace('}{','/').replace("\\,","").replace("  "," ").replace("} a"," a")
-        S = S.replace("\\\\","\n").replace("\\text{","").replace(':}','').replace(' ,',',')
+        S = S.replace("\\\\","\n").replace("\\text{","").replace(':}','').replace(' ,',',').replace('},',',').replace('}=','} =')
+        if S[-2] == '}':
+            S = S[:-2]
         for n in range(10):
             S = S.replace(str(n)+' a',str(n)+'*a')
         return S
