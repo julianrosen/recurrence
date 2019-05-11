@@ -163,7 +163,8 @@ class RecurrenceElement(RingElement):
         return parent(self).base()
     
     def _repr_(self):
-        return "A recurrent sequence over "+str(self.base())
+        return self.show(string=True)
+        #return "A recurrent sequence over "+str(self.base())
     
     def _add_(self, other):
         R = parent(self)(0)
@@ -438,10 +439,10 @@ class RecurrenceElement(RingElement):
     def is_abelian(self):
         return self.galois_group().is_abelian()
     
-    def disp(self,mathjax=True,tex=False):
+    def disp(self,mathjax=True,string=False):
         """ Displays a description of self using MathJax
         If mathjax is False, won't use MathJax
-        If tex is True, returns a string which is tex code (tex is ignored if mathjax is False)"""
+        If string is True, returns a string but doesn't display"""
         self.reduce()
         k = self.n()
         assert self.char_poly[-1] == 1
@@ -455,31 +456,31 @@ class RecurrenceElement(RingElement):
         for n in range(1,k):
             S = S.replace(latex(V[n]),"a_{n-%i}"%n)
         if mathjax:
-            S = "\\text{Recurrent sequence:}\\\\" + S + "\\\\"
+            S = "\\text{Recurrent sequence over %s:}\\\\"%self.base() + S + "\\\\"
             for n in range(self.n()-1):
                 S = S + "a_{%i}="%n + latex(self.init_vals[n]) + ",\,\,"
         else:
-            print "Recurrent sequence:"
             S = S.replace("\\frac{","").replace('}{','/').replace("\\,","").replace("  "," ").replace("} a"," a")
             for n in range(10):
                 S = S.replace(str(n)+' a',str(n)+'*a')
-            print S
-            S = ""
+            S = "Recurrent sequence over %s:"%self.base() + '\n' + S + '\n'
             for n in range(self.n()-1):
                 S = S + "a_%i = "%n + str(self.init_vals[n]) + ", "
         if k >= 2:
             S = S[:(-5 if mathjax else -2)]
-        if tex:
+        if string:
             return S
-        elif mathjax:
-            display(Math(S))
         else:
-            print S
-        return None
+            if mathjax:
+                display(Math(S))
+            else:
+                print S
+            return None
+        raise Exception("Disp() ran off the end")
     
-    def show(self):
+    def show(self,string=False):
         """ Displays self without MathJax"""
-        self.disp(mathjax=False)
+        return self.disp(mathjax=False,string=string)
     
     def decide(self):
         """ Returns True if there is a prime p for which a_p = 0 mod p,
