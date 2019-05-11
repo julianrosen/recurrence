@@ -325,7 +325,7 @@ class RecurrenceElement(RingElement):
         L += self.init_vals
         L = [x.denominator() for x in L]
         for x in set(L):
-            add_primes(T,x)
+            add_primes(T,x) 
         add_primes(T,self.splitting_field().disc())
         A = self.A()
         for g in A:
