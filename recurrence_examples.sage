@@ -26,7 +26,7 @@ for n in range(30):
 F = R.fib() # Fibonacci sequence
 T = R.trib() # Tribonacci sequence
 power_2 = R.exp(2) # Sequence a_n = 2^n
-r = F+3-T^2/2
+r = F+3-T^2/power_2
 r.show()
 
 ####
