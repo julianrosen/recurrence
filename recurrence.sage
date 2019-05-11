@@ -14,21 +14,6 @@ def poly_to_L(f):
         # f is a constant polynomial, which is just a number and has no coefficients() method
         return [f]
 
-def prod_roots_old(L1,L2):
-    """ No longer in use 
-    Returns a list of coefficients of the polynomial whose roots are precisely
-    the products of a root of the polynomial with coefficients L1 and a root
-    of the polynomial with coefficients L2"""
-    R.<x> = PolynomialRing(QQ)
-    f = R(L_to_poly(L1))
-    g = R(L_to_poly(L2))
-    K.<t> = (f*g).splitting_field()
-    S.<x> = PolynomialRing(K)
-    h = prod(prod((x-s[0]*t[0])**(s[1]*t[1]) for s in f.roots(K))\
-             for t in g.roots(K))
-    poly_to_L(h)
-    return [QQ(x) for x in poly_to_L(h)]
-
 def prod_roots(L1,L2):
     """ Returns a list of coefficients of the polynomial whose roots are precisely
     the products of a root of the polynomial with coefficients L1 and a root
@@ -280,27 +265,7 @@ class RecurrenceElement(RingElement):
         self.init_vals = self.init_vals[:i]
         return None
     
-    def old_reduce(self):
-        """ Ensures characteristic polynomial is minimal
-        This method is no longer used"""
-        if self.base() is not QQ:
-            # Don't even try to reduce unless base ring is Q
-            return None
-        assert len(self.init_vals) >= len(self.char_poly)-1
-        self.init_vals = self.init_vals[:len(self.char_poly)-1]
-        F = self.characteristic_polynomial().factor()
-        L = [x[1] for x in list(F)]
-        PL = [x[0] for x in list(F)]
-        for LL in subs(L):
-            P = prod(PL[n]**LL[n] for n in range(len(LL)))
-            R.<x> = PolynomialRing(QQ)
-            P = R(P)
-            if rec_test(P.coefficients(sparse=False),self.init_vals):
-                self.char_poly = P.coefficients(sparse=False)
-                self.init_vals = self.init_vals[:len(self.char_poly)-1]
-                return None
-        raise Exception('reduce(self) ran off the end') # Should not happen
-    
+   
     def splitting_field(self):
         var('a')
         K = (self.characteristic_polynomial().splitting_field(a))
@@ -338,7 +303,6 @@ class RecurrenceElement(RingElement):
         for i in range(n):
             L.append((U[i]*V[i],D[i][i]))
         return L
-    
     
     
     def bad_primes(self):
@@ -542,9 +506,7 @@ def recurrence_from_class(L,phi,x=None):
         # Should not happen
         raise ValueError("Cannot tell if third argument is normal")
     assert M*v == vector(phi)
-    if [sum(v[j]*g(h(x)) for j,h in enumerate(LL)) for g in LL] != phi:
-        print [sum(v[j]*g(h(x)) for j,h in enumerate(LL)) for g in LL]
-        print phi
+    assert [sum(v[j]*g(h(x)) for j,h in enumerate(LL)) for g in LL] == phi
     char_poly = x.minpoly().coefficients(sparse=False)
     init_vals = [sum(v[j]*(LL[j](x))**i for j in range(n)) for i in range(n)]
     R = Recurrence(QQ)
