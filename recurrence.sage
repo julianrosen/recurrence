@@ -323,8 +323,9 @@ class RecurrenceElement(RingElement):
         L = self.j_form()
         L = flatten([[list(x) for x in Y] for Y in L])
         L += self.init_vals
-        for x in L:
-            add_primes(T,x.denominator())
+        L = [x.denominator() for x in L]
+        for x in set(L):
+            add_primes(T,x)
         add_primes(T,self.splitting_field().disc())
         A = self.A()
         for g in A:
@@ -394,14 +395,19 @@ class RecurrenceElement(RingElement):
             else:
                 return reduce_congruence(T)
             
-    def min_poly_p(self,display=True):
+    def min_poly_p(self,factors=False,display=False):
         """ Computes the minimal polynomial of a_p \mod p,
-        # and the density for each irreducible factor"""
+        and the density for each irreducible factor"""
         A = self.A()
         n = len(A)
         D = {}
+        T = None
         for g in A:
             P = minimal_polynomial(A[g])
+            if T is None:
+                T = P
+            else:
+                T = lcm(T,P)
             if P in D:
                 D[P] += 1/n
             else:
@@ -412,7 +418,10 @@ class RecurrenceElement(RingElement):
             for q in K:
                 print "%r:\t"%D[q]+str(q)
             return None
-        return D
+        if factors:
+            return D
+        else:
+            return T
     
     def disc(self):
         """ Returns the discriminant"""
@@ -483,10 +492,11 @@ def is_normal(x):
     G = L.galois_group()
     return not V.are_linearly_dependent([f(g(x)) for g in G])
 
-def recurrence_from_class(L,phi,x=None):
+def recurrence_from_function(L,phi,x=None):
     """ Returns a recurrent sequence (a_n)
     such that phi(frob_p) = a_p mod p, where phi is a function Gal(L/Q) --> L
-    satisfying phi(ghg^{-1}) = g(phi(h))"""
+    satisfying phi(ghg^{-1}) = g(phi(h))
+    This function is not deterministic"""
     b = L.gens()[0]
     G = L.galois_group()
     LL = list(G)
@@ -500,7 +510,6 @@ def recurrence_from_class(L,phi,x=None):
     else:
         if not is_normal(x):
             raise ValueError("Third argument needs to be a normal element")
-    
     if isinstance(phi,FunctionType):
         # Turn phi into a list
         phi = [phi(g) for g in LL]
@@ -517,4 +526,17 @@ def recurrence_from_class(L,phi,x=None):
     char_poly = x.minpoly().coefficients(sparse=False)
     init_vals = [sum(v[j]*(LL[j](x))**i for j in range(n)) for i in range(n)]
     R = Recurrence(QQ)
-    return R((char_poly,init_vals))
+    return R(char_poly,init_vals)
+
+def recurrence_from_conjugacy_class(C):
+    """ Returns a recurrent sequence (a_n) such that a_p = 1 mod p if the 
+    frobenius at p is in the conjugacy class C, a_p = 0 mod p otherwise
+    This function is not deterministic"""
+    G = group_from_subset(C)
+    phi = {g:1 if g in C else 0 for g in G}
+    return recurrence_from_function(G.number_field(),phi)
+    
+def group_from_subset(S):
+    """ Returns the Galois group with S as a subset"""
+    return S.an_element().as_hom().domain().galois_group() # This is ridiculous. There must be a better way
+    
