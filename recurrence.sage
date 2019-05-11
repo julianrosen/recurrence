@@ -216,7 +216,14 @@ class RecurrenceElement(RingElement):
         if a is None:
             a = 0
         return self.get_range(a,b)
-      
+    
+    def __eq__(self,other):
+        if not isinstance(other,RecurrenceElement):
+            other = parent(self)(other)
+        self.reduce()
+        other.reduce()
+        return self.init_vals == other.init_vals and self.char_poly == other.char_poly
+    
     def shift(self,n):
         L = self.get_range(n,n+len(self.init_vals))
         new_base = parent(self.base()(0) + sum(L))
