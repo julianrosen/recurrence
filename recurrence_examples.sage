@@ -23,10 +23,10 @@ for n in range(30):
 # Find recurrence relation/initial values of recurrence built from other recurrence
 #
 ####
-F = R.fib() # Fibonacci sequence
-T = R.trib() # Tribonacci sequence
+F = R.fib() # Fibonacci sequence F_n
+T = R.trib() # Tribonacci sequence T_n
 power_2 = R.exp(2) # Sequence a_n = 2^n
-r = F+3-T^2/power_2
+r = F+3-T^2/power_2 # Sequence a_n = F_n + 3 - T_n^2/2^n
 r.show()
 
 ####
@@ -69,7 +69,7 @@ x = PolynomialRing(QQ,'x').gens()[0]
 degree = 3 # Our field will be the splitting field of a random polynomial of at most this degree (slow if degree >= 4)
 f = x^degree + sum(randint(-10,10)*x^i for i in range(degree))
 f = f.factor()[0][0] # Random irreducible polynomial
-L.<y> = (f).splitting_field() # L/Q is a finite Galois extension
+L.<y> = f.splitting_field() # L/Q is a finite Galois extension
 print "Number field of degree %i"%L.degree()
 O = L.ring_of_integers()
 G = L.galois_group() # Galois group of L
@@ -95,7 +95,7 @@ print "Verified for %i primes"%count
 
 ####
 #
-# Choose a random element of A(L), build the corresponding recurrent sequence
+# Choose a random element of A(L), build a corresponding recurrent sequence
 #
 ####
 x = PolynomialRing(QQ,'x').gens()[0]

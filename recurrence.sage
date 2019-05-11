@@ -154,8 +154,34 @@ class RecurrenceElement(RingElement):
         return parent(self).base()
     
     def _repr_(self):
-        return self.show(string=True)
-        #return "A recurrent sequence over "+str(self.base())
+        """ Description of self"""
+        S = latex(self)
+        S = S.replace("\\frac{","").replace('}{','/').replace("\\,","").replace("  "," ").replace("} a"," a")
+        S = S.replace("\\\\","\n").replace("\\text{","").replace(':}','').replace(' ,',',')
+        for n in range(10):
+            S = S.replace(str(n)+' a',str(n)+'*a')
+        return S
+    
+    def _latex_(self):
+        """ Returns latex for self"""
+        self.reduce()
+        k = self.n()
+        assert self.char_poly[-1] == 1
+        V = []
+        for n in range(k):
+            V.append('x%i'%n)
+        R = PolynomialRing(self.base(),V)
+        V = R.gens()
+        E = sum(-V[-n-1]*self.char_poly[n] for n in range(k-1))
+        S =  "a_{n} = " + latex(E)
+        for n in range(1,k):
+            S = S.replace(latex(V[n]),"a_{n-%i}"%n)
+        S = "\\text{Recurrent sequence over %s:}\\\\"%self.base() + S + "\\\\"
+        for n in range(self.n()-1):
+            S = S + "a_{%i}="%n + latex(self.init_vals[n]) + ",\,\,"
+        if k >= 2:
+            S = S[:-5]
+        return S
     
     def _add_(self, other):
         R = parent(self)(0)
@@ -430,48 +456,17 @@ class RecurrenceElement(RingElement):
     def is_abelian(self):
         return self.galois_group().is_abelian()
     
-    def disp(self,mathjax=True,string=False):
-        """ Displays a description of self using MathJax
-        If mathjax is False, won't use MathJax
-        If string is True, returns a string but doesn't display"""
-        self.reduce()
-        k = self.n()
-        assert self.char_poly[-1] == 1
-        V = []
-        for n in range(k):
-            V.append('x%i'%n)
-        R = PolynomialRing(self.base(),V)
-        V = R.gens()
-        E = sum(-V[-n-1]*self.char_poly[n] for n in range(k-1))
-        S =  "a_{n} = " + latex(E)
-        for n in range(1,k):
-            S = S.replace(latex(V[n]),"a_{n-%i}"%n)
-        if mathjax:
-            S = "\\text{Recurrent sequence over %s:}\\\\"%self.base() + S + "\\\\"
-            for n in range(self.n()-1):
-                S = S + "a_{%i}="%n + latex(self.init_vals[n]) + ",\,\,"
+    def disp(self,render=True):
+        """ Displays self"""
+        if render:
+            display(Math(latex(self)))
         else:
-            S = S.replace("\\frac{","").replace('}{','/').replace("\\,","").replace("  "," ").replace("} a"," a")
-            for n in range(10):
-                S = S.replace(str(n)+' a',str(n)+'*a')
-            S = "Recurrent sequence over %s:"%self.base() + '\n' + S + '\n'
-            for n in range(self.n()-1):
-                S = S + "a_%i = "%n + str(self.init_vals[n]) + ", "
-        if k >= 2:
-            S = S[:(-5 if mathjax else -2)]
-        if string:
-            return S
-        else:
-            if mathjax:
-                display(Math(S))
-            else:
-                print S
-            return None
-        raise Exception("Disp() ran off the end")
-    
-    def show(self,string=False):
-        """ Displays self without MathJax"""
-        return self.disp(mathjax=False,string=string)
+            print str(self)
+        return None
+                   
+    def show(self):
+        """ Displays self"""
+        return self.disp(render=False)
     
     def decide(self):
         """ Returns True if there is a prime p for which a_p = 0 mod p,
